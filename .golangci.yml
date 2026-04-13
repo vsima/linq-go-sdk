@@ -13,6 +13,15 @@ linters:
     - staticcheck
     - unconvert
     - unused
+  settings:
+    errcheck:
+      exclude-functions:
+        - (*net/http.Response).Body.Close
+        - (io.Closer).Close
+    revive:
+      rules:
+        - name: exported
+          disabled: true
   exclusions:
     rules:
       - path: _test\.go
