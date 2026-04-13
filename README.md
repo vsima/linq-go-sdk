@@ -12,9 +12,12 @@
 [![CI](https://github.com/vsima/linq-go-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/vsima/linq-go-sdk/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/vsima/linq-go-sdk)](https://goreportcard.com/report/github.com/vsima/linq-go-sdk)
 [![codecov](https://codecov.io/gh/vsima/linq-go-sdk/branch/main/graph/badge.svg)](https://codecov.io/gh/vsima/linq-go-sdk)
+[![Release](https://img.shields.io/github/v/release/vsima/linq-go-sdk?include_prereleases&sort=semver&logo=go&logoColor=white)](https://github.com/vsima/linq-go-sdk/releases)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/vsima/linq-go-sdk?logo=go&logoColor=white)](./go.mod)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![Go Version](https://img.shields.io/github/go-mod/go-version/vsima/linq-go-sdk)](./go.mod)
-[![Release](https://img.shields.io/github/v/release/vsima/linq-go-sdk?include_prereleases&sort=semver)](https://github.com/vsima/linq-go-sdk/releases)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/vsima/linq-go-sdk/badge)](https://securityscorecards.dev/viewer/?uri=github.com/vsima/linq-go-sdk)
+[![Last commit](https://img.shields.io/github/last-commit/vsima/linq-go-sdk)](https://github.com/vsima/linq-go-sdk/commits/main)
+[![GitHub stars](https://img.shields.io/github/stars/vsima/linq-go-sdk?style=social)](https://github.com/vsima/linq-go-sdk/stargazers)
 
 An unofficial Go client for the [Linq Partner API V3](https://apidocs.linqapp.com/) — send and receive iMessage, RCS, and SMS from Go.
 
