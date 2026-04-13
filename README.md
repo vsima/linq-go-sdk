@@ -1,0 +1,181 @@
+```
+  ██╗     ██╗███╗   ██╗ ██████╗      ██████╗  ██████╗     ███████╗██████╗ ██╗  ██╗
+  ██║     ██║████╗  ██║██╔═══██╗    ██╔════╝ ██╔═══██╗    ██╔════╝██╔══██╗██║ ██╔╝
+  ██║     ██║██╔██╗ ██║██║   ██║    ██║  ███╗██║   ██║    ███████╗██║  ██║█████╔╝
+  ██║     ██║██║╚██╗██║██║▄▄ ██║    ██║   ██║██║   ██║    ╚════██║██║  ██║██╔═██╗
+  ███████╗██║██║ ╚████║╚██████╔╝    ╚██████╔╝╚██████╔╝    ███████║██████╔╝██║  ██╗
+  ╚══════╝╚═╝╚═╝  ╚═══╝ ╚══▀▀═╝      ╚═════╝  ╚═════╝     ╚══════╝╚═════╝ ╚═╝  ╚═╝
+                        iMessage · RCS · SMS — one Go client
+```
+
+[![Go Reference](https://pkg.go.dev/badge/github.com/vsima/linq-go-sdk.svg)](https://pkg.go.dev/github.com/vsima/linq-go-sdk)
+[![CI](https://github.com/vsima/linq-go-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/vsima/linq-go-sdk/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/vsima/linq-go-sdk)](https://goreportcard.com/report/github.com/vsima/linq-go-sdk)
+[![codecov](https://codecov.io/gh/vsima/linq-go-sdk/branch/main/graph/badge.svg)](https://codecov.io/gh/vsima/linq-go-sdk)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/vsima/linq-go-sdk)](./go.mod)
+[![Release](https://img.shields.io/github/v/release/vsima/linq-go-sdk?include_prereleases&sort=semver)](https://github.com/vsima/linq-go-sdk/releases)
+
+An unofficial Go client for the [Linq Partner API V3](https://apidocs.linqapp.com/) — send and receive iMessage, RCS, and SMS from Go.
+
+## Install
+
+```sh
+go get github.com/vsima/linq-go-sdk@latest
+```
+
+Requires Go 1.22+. Zero third-party dependencies.
+
+## Quick start
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"os"
+
+	linq "github.com/vsima/linq-go-sdk"
+)
+
+func main() {
+	c := linq.NewClient(os.Getenv("LINQ_TOKEN"))
+	ctx := context.Background()
+
+	res, err := c.Chats.Create(ctx, &linq.CreateChatRequest{
+		From: "+15551234567",
+		To:   []string{"+15557654321"},
+		Message: linq.CreateChatMessage{
+			Parts: []linq.MessagePart{linq.NewTextPart("Hello from Go! 👋")},
+		},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("chat:", res.Chat.ID, "message:", res.Message.ID)
+}
+```
+
+## Features
+
+- **Full V3 coverage** — chats, messages, reactions, attachments, phone numbers, webhooks
+- **Typed message parts** — text / media / link with a discriminated union
+- **Message effects** — screen (confetti, fireworks…) and bubble (slam, loud…) effects
+- **Threaded replies** and custom-emoji reactions
+- **Presigned attachment uploads** with a helper `Upload` method
+- **Webhook event parsing** with typed `Event` envelope
+- **Typed errors** — `APIError` with `IsNotFound`, `IsUnauthorized`, `IsRateLimited` helpers
+- **Context-aware** — every call takes a `context.Context`
+- **Pluggable `http.Client`** for retries, instrumentation, proxying
+- **No third-party dependencies**
+
+## Examples
+
+### Send a message with a screen effect
+
+```go
+msg, err := c.Messages.Send(ctx, chatID, &linq.SendMessageRequest{
+	Parts:  []linq.MessagePart{linq.NewTextPart("🎉")},
+	Effect: &linq.MessageEffect{Type: "screen", Name: "confetti"},
+})
+```
+
+### Reply in a thread
+
+```go
+msg, err := c.Messages.Send(ctx, chatID, &linq.SendMessageRequest{
+	Parts:   []linq.MessagePart{linq.NewTextPart("same")},
+	ReplyTo: &linq.ReplyTo{MessageID: parentID},
+})
+```
+
+### React with a custom emoji
+
+```go
+emoji := "🔥"
+err := c.Reactions.Set(ctx, messageID, &linq.ReactionRequest{
+	Type:        linq.ReactionCustom,
+	CustomEmoji: &emoji,
+})
+```
+
+### Upload and send an attachment
+
+```go
+f, _ := os.Open("cat.png")
+defer f.Close()
+
+att, err := c.Attachments.Create(ctx, &linq.CreateAttachmentRequest{
+	FileName: "cat.png",
+	MimeType: "image/png",
+})
+if err != nil { log.Fatal(err) }
+
+if err := c.Attachments.Upload(ctx, att, "image/png", f); err != nil {
+	log.Fatal(err)
+}
+
+_, err = c.Messages.Send(ctx, chatID, &linq.SendMessageRequest{
+	Parts: []linq.MessagePart{linq.NewMediaPartByID(att.AttachmentID)},
+})
+```
+
+### Handle a webhook
+
+```go
+http.HandleFunc("/linq", func(w http.ResponseWriter, r *http.Request) {
+	body, _ := io.ReadAll(r.Body)
+	evt, err := linq.ParseEvent(body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	switch evt.EventType {
+	case linq.EventMessageReceived:
+		var msg linq.Message
+		_ = evt.DecodeData(&msg)
+		log.Println("received:", msg.ID)
+	}
+	w.WriteHeader(http.StatusOK)
+})
+```
+
+## Error handling
+
+```go
+_, err := c.Chats.Get(ctx, chatID)
+switch {
+case linq.IsNotFound(err):
+	// 404
+case linq.IsUnauthorized(err):
+	// 401
+case linq.IsRateLimited(err):
+	var ae *linq.APIError
+	errors.As(err, &ae)
+	time.Sleep(time.Duration(ae.RetryAfter) * time.Second)
+case err != nil:
+	log.Fatal(err)
+}
+```
+
+## Testing
+
+```sh
+make test           # go test ./...
+make cover          # coverage report
+make lint           # gofmt + go vet
+```
+
+## Contributing
+
+Issues and PRs welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+## Disclaimer
+
+This SDK is **not affiliated with Linq**. Product names and trademarks are property of their respective owners.
+
+## License
+
+[MIT](./LICENSE) © Victor Sima
