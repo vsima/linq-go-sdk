@@ -2,8 +2,15 @@ package linq
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -119,4 +126,80 @@ func ParseEvent(body []byte) (*Event, error) {
 		return nil, err
 	}
 	return &e, nil
+}
+
+// Webhook header names set by the Linq signing process.
+const (
+	HeaderWebhookTimestamp = "X-Webhook-Timestamp"
+	HeaderWebhookSignature = "X-Webhook-Signature"
+)
+
+// DefaultWebhookTolerance is the default maximum age accepted by
+// [VerifyWebhook]. Requests older than this are rejected as possible replays.
+const DefaultWebhookTolerance = 5 * time.Minute
+
+// Errors returned by [VerifyWebhook] and [VerifyWebhookRequest].
+var (
+	ErrWebhookMissingHeader    = errors.New("linq: missing webhook signature header")
+	ErrWebhookInvalidTimestamp = errors.New("linq: invalid webhook timestamp")
+	ErrWebhookStale            = errors.New("linq: webhook timestamp outside tolerance")
+	ErrWebhookSignature        = errors.New("linq: webhook signature mismatch")
+)
+
+// VerifyWebhook verifies an HMAC-SHA256 webhook signature as specified by Linq.
+//
+// The signed payload is "{timestamp}.{body}" where body is the raw request
+// bytes (do not re-serialize JSON before calling). signature is the value of
+// the [HeaderWebhookSignature] header, hex-encoded.
+//
+// If tolerance is > 0, requests with a timestamp older than tolerance (or more
+// than tolerance in the future) are rejected with [ErrWebhookStale].
+// Pass 0 to disable the freshness check — not recommended in production.
+func VerifyWebhook(body []byte, timestamp, signature, secret string, tolerance time.Duration) error {
+	if timestamp == "" || signature == "" {
+		return ErrWebhookMissingHeader
+	}
+
+	ts, err := strconv.ParseInt(timestamp, 10, 64)
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrWebhookInvalidTimestamp, err)
+	}
+	if tolerance > 0 {
+		age := time.Since(time.Unix(ts, 0))
+		if age < 0 {
+			age = -age
+		}
+		if age > tolerance {
+			return ErrWebhookStale
+		}
+	}
+
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(timestamp))
+	mac.Write([]byte{'.'})
+	mac.Write(body)
+	expected := hex.EncodeToString(mac.Sum(nil))
+
+	if !hmac.Equal([]byte(expected), []byte(signature)) {
+		return ErrWebhookSignature
+	}
+	return nil
+}
+
+// VerifyWebhookRequest reads the full body of r, verifies its signature using
+// [VerifyWebhook], and returns the raw body bytes for downstream parsing.
+//
+// On success the caller can pass the returned bytes to [ParseEvent]. The body
+// of r is consumed; re-reading r.Body after this call will yield nothing.
+func VerifyWebhookRequest(r *http.Request, secret string, tolerance time.Duration) ([]byte, error) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return nil, fmt.Errorf("linq: read webhook body: %w", err)
+	}
+	ts := r.Header.Get(HeaderWebhookTimestamp)
+	sig := r.Header.Get(HeaderWebhookSignature)
+	if err := VerifyWebhook(body, ts, sig, secret, tolerance); err != nil {
+		return nil, err
+	}
+	return body, nil
 }

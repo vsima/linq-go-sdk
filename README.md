@@ -68,7 +68,7 @@ func main() {
 - **Message effects** — screen (confetti, fireworks…) and bubble (slam, loud…) effects
 - **Threaded replies** and custom-emoji reactions
 - **Presigned attachment uploads** with a helper `Upload` method
-- **Webhook event parsing** with typed `Event` envelope
+- **Webhook event parsing + signature verification** (HMAC-SHA256, replay-safe)
 - **Typed errors** — `APIError` with `IsNotFound`, `IsUnauthorized`, `IsRateLimited` helpers
 - **Context-aware** — every call takes a `context.Context`
 - **Pluggable `http.Client`** for retries, instrumentation, proxying
@@ -125,11 +125,19 @@ _, err = c.Messages.Send(ctx, chatID, &linq.SendMessageRequest{
 })
 ```
 
-### Handle a webhook
+### Handle a signed webhook
+
+`VerifyWebhookRequest` verifies the HMAC-SHA256 signature Linq sets on
+`X-Webhook-Signature` over `{timestamp}.{rawBody}`, rejects replays older
+than the tolerance, and returns the raw body for parsing.
 
 ```go
 http.HandleFunc("/linq", func(w http.ResponseWriter, r *http.Request) {
-	body, _ := io.ReadAll(r.Body)
+	body, err := linq.VerifyWebhookRequest(r, signingSecret, linq.DefaultWebhookTolerance)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
 	evt, err := linq.ParseEvent(body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
