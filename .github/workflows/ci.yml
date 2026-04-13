@@ -31,7 +31,7 @@ jobs:
         run: go test -race -timeout 120s -coverprofile=coverage.txt -covermode=atomic ./...
       - name: Upload coverage
         if: matrix.os == 'ubuntu-latest' && matrix.go == '1.23'
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v6
         with:
           files: ./coverage.txt
           token: ${{ secrets.CODECOV_TOKEN }}
