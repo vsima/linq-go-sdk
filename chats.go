@@ -65,9 +65,10 @@ type CreateChatRequest struct {
 }
 
 // CreateChatResult is the 201 response from creating a chat.
+//
+// The initial message lives at Chat.Message, not at the top level.
 type CreateChatResult struct {
-	Chat    Chat    `json:"chat"`
-	Message Message `json:"message"`
+	Chat Chat `json:"chat"`
 }
 
 // Create creates a new chat with an initial message.

@@ -51,6 +51,9 @@ const (
 )
 
 // Chat is a conversation.
+//
+// Message is populated only on the response from [ChatsService.Create]; it
+// carries the initial message and is nil on other endpoints.
 type Chat struct {
 	ID          string       `json:"id"`
 	DisplayName *string      `json:"display_name,omitempty"`
@@ -60,6 +63,7 @@ type Chat struct {
 	IsGroup     bool         `json:"is_group"`
 	CreatedAt   time.Time    `json:"created_at"`
 	UpdatedAt   time.Time    `json:"updated_at"`
+	Message     *Message     `json:"message,omitempty"`
 }
 
 // ChatHandle identifies a participant in a chat.
