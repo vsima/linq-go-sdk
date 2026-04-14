@@ -74,7 +74,20 @@ func main() {
 - **Pluggable `http.Client`** for retries, instrumentation, proxying
 - **No third-party dependencies**
 
-## Examples
+## Runnable examples
+
+Two ready-to-run example programs live under [`examples/`](./examples):
+
+```sh
+# Send a single text message
+LINQ_TOKEN=xxx go run ./examples/send-message \
+    -from +15551234567 -to +15557654321 -text "Hello from Go"
+
+# Receive webhooks (verifies HMAC signatures, logs each event)
+LINQ_SIGNING_SECRET=xxx go run ./examples/webhook-server
+```
+
+## Snippets
 
 ### Send a message with a screen effect
 
