@@ -18,15 +18,18 @@ import (
 type WebhooksService struct{ c *Client }
 
 // WebhookSubscription describes a webhook endpoint and its subscribed events.
+//
+// SigningSecret is the HMAC key for [VerifyWebhookRequest]; it is returned on
+// Create and Get but may be omitted from List responses. Store it securely.
 type WebhookSubscription struct {
-	ID          string    `json:"id"`
-	URL         string    `json:"url"`
-	Events      []string  `json:"events"`
-	Secret      string    `json:"secret,omitempty"`
-	IsActive    bool      `json:"is_active"`
-	CreatedAt   time.Time `json:"created_at,omitempty"`
-	UpdatedAt   time.Time `json:"updated_at,omitempty"`
-	Description string    `json:"description,omitempty"`
+	ID               string    `json:"id"`
+	TargetURL        string    `json:"target_url"`
+	SubscribedEvents []string  `json:"subscribed_events"`
+	SigningSecret    string    `json:"signing_secret,omitempty"`
+	PhoneNumbers     []string  `json:"phone_numbers,omitempty"`
+	IsActive         bool      `json:"is_active"`
+	CreatedAt        time.Time `json:"created_at,omitempty"`
+	UpdatedAt        time.Time `json:"updated_at,omitempty"`
 }
 
 // ListWebhookSubscriptionsResult is a page of subscriptions.
@@ -44,10 +47,13 @@ func (s *WebhooksService) List(ctx context.Context) (*ListWebhookSubscriptionsRe
 }
 
 // CreateWebhookSubscriptionRequest creates a new webhook subscription.
+//
+// Set PhoneNumbers to scope the subscription to specific sender numbers;
+// leave nil to receive events for all numbers associated with the token.
 type CreateWebhookSubscriptionRequest struct {
-	URL         string   `json:"url"`
-	Events      []string `json:"events"`
-	Description string   `json:"description,omitempty"`
+	TargetURL        string   `json:"target_url"`
+	SubscribedEvents []string `json:"subscribed_events"`
+	PhoneNumbers     []string `json:"phone_numbers,omitempty"`
 }
 
 // Create registers a new webhook subscription.
@@ -61,10 +67,10 @@ func (s *WebhooksService) Create(ctx context.Context, req *CreateWebhookSubscrip
 
 // UpdateWebhookSubscriptionRequest updates mutable fields of a subscription.
 type UpdateWebhookSubscriptionRequest struct {
-	URL         *string  `json:"url,omitempty"`
-	Events      []string `json:"events,omitempty"`
-	IsActive    *bool    `json:"is_active,omitempty"`
-	Description *string  `json:"description,omitempty"`
+	TargetURL        *string  `json:"target_url,omitempty"`
+	SubscribedEvents []string `json:"subscribed_events,omitempty"`
+	PhoneNumbers     []string `json:"phone_numbers,omitempty"`
+	IsActive         *bool    `json:"is_active,omitempty"`
 }
 
 // Update modifies a webhook subscription.

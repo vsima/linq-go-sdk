@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Changed (breaking)
+- Webhook subscription JSON fields corrected to match the actual API (docs mislabel them):
+  - `WebhookSubscription.URL` → `TargetURL` (`target_url`)
+  - `WebhookSubscription.Events` → `SubscribedEvents` (`subscribed_events`)
+  - `WebhookSubscription.Secret` → `SigningSecret` (`signing_secret`)
+  - `WebhookSubscription.Description` removed (not returned by the API)
+  - `WebhookSubscription.PhoneNumbers` added (`phone_numbers`)
+  - Same renames applied to `CreateWebhookSubscriptionRequest` and `UpdateWebhookSubscriptionRequest`.
+
+  Verified against the Linq sandbox on 2026-04-14: the API rejected `url` with `"target_url is required"` and `events` with `"subscribed_events is required"`. Response bodies carry `signing_secret` and `phone_numbers`.
+
 ## [0.2.0] — 2026-04-13
 
 ### Changed (breaking)
