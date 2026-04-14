@@ -57,7 +57,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("chat:", res.Chat.ID, "message:", res.Message.ID)
+	fmt.Println("chat:", res.Chat.ID, "message:", res.Chat.Message.ID)
 }
 ```
 

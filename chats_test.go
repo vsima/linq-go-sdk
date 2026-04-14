@@ -47,7 +47,7 @@ func TestChatsCreate(t *testing.T) {
 			t.Errorf("parts = %+v", body.Message.Parts)
 		}
 		w.WriteHeader(http.StatusCreated)
-		_, _ = w.Write([]byte(`{"chat":{"id":"c1","is_archived":false,"is_group":false,"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z"},"message":{"id":"m1","parts":[],"created_at":"2026-01-01T00:00:00Z","delivery_status":"queued","is_read":false}}`))
+		_, _ = w.Write([]byte(`{"chat":{"id":"c1","is_archived":false,"is_group":false,"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z","message":{"id":"m1","parts":[],"created_at":"2026-01-01T00:00:00Z","delivery_status":"queued","is_read":false}}}`))
 	})
 	res, err := c.Chats.Create(context.Background(), &CreateChatRequest{
 		From:    "+15551234567",
@@ -57,7 +57,7 @@ func TestChatsCreate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Chat.ID != "c1" || res.Message.ID != "m1" {
+	if res.Chat.ID != "c1" || res.Chat.Message == nil || res.Chat.Message.ID != "m1" {
 		t.Errorf("res = %+v", res)
 	}
 }
