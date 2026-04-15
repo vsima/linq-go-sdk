@@ -27,7 +27,7 @@ An unofficial Go client for the [Linq Partner API V3](https://apidocs.linqapp.co
 go get github.com/vsima/linq-go-sdk@latest
 ```
 
-Requires Go 1.22+. Zero third-party dependencies.
+Requires Go 1.25+. Zero third-party dependencies.
 
 ## Quick start
 
