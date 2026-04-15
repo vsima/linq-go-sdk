@@ -3,6 +3,7 @@ package linq
 import (
 	"context"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 )
@@ -36,12 +37,18 @@ func TestClientHeaders(t *testing.T) {
 
 func TestWithUserAgent(t *testing.T) {
 	var gotUA string
-	srv, _ := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+	handler := func(w http.ResponseWriter, r *http.Request) {
 		gotUA = r.Header.Get("User-Agent")
 		_, _ = w.Write([]byte(`{"chats":[]}`))
-	})
-	srv.userAgent = "custom/1.0"
-	_, _ = srv.Chats.List(context.Background(), nil)
+	}
+	ts := httptest.NewServer(http.HandlerFunc(handler))
+	t.Cleanup(ts.Close)
+	c := NewClient("t",
+		WithBaseURL(ts.URL),
+		WithHTTPClient(ts.Client()),
+		WithUserAgent("custom/1.0"),
+	)
+	_, _ = c.Chats.List(context.Background(), nil)
 	if gotUA != "custom/1.0" {
 		t.Errorf("User-Agent = %q", gotUA)
 	}
