@@ -48,6 +48,22 @@ func TestAttachmentsCreateAndUpload(t *testing.T) {
 	}
 }
 
+func TestAttachmentsGet(t *testing.T) {
+	c, _ := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v3/attachments/att-1" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		_, _ = w.Write([]byte(`{"attachment_id":"att-1","status":"ready","download_url":"https://x/d"}`))
+	})
+	att, err := c.Attachments.Get(context.Background(), "att-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if att.Status != "ready" || att.DownloadURL != "https://x/d" {
+		t.Errorf("att = %+v", att)
+	}
+}
+
 func TestAttachmentsUploadFailure(t *testing.T) {
 	upSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
